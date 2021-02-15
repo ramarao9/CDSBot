@@ -6,7 +6,7 @@ using Microsoft.Bot.Builder.TraceExtensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Vij.CDS.Bots.Helpers
+namespace Vij.Bots.DynamicsCRMBot.Helpers
 {
     public class AdapterWithErrorHandler : BotFrameworkHttpAdapter
     {

@@ -10,10 +10,13 @@ using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Vij.CDS.Bots.Bots;
-using Vij.CDS.Bots.Dialogs;
-using Vij.CDS.Bots.Helpers;
-using Vij.CDS.Bots.Services;
+using Microsoft.PowerPlatform.Cds.Client;
+using Vij.Bots.DynamicsCRMBot.Bots;
+using Vij.Bots.DynamicsCRMBot.Dialogs;
+using Vij.Bots.DynamicsCRMBot.Helpers;
+using Vij.Bots.DynamicsCRMBot.Interfaces;
+using Vij.Bots.DynamicsCRMBot.Repositories;
+using Vij.Bots.DynamicsCRMBot.Services;
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -36,9 +39,6 @@ namespace Microsoft.BotBuilderSamples
             services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
 
-
-
-
             // Register LUIS recognizer
             services.AddSingleton<CDSRecognizer>();
 
@@ -46,6 +46,8 @@ namespace Microsoft.BotBuilderSamples
             ConfigureState(services, _configuration);
 
             ConfigureDialogs(services);
+
+            ConfigureRepositories(services, _configuration);
 
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
             services.AddTransient<IBot, DialogBot<MainDialog>>();
@@ -76,6 +78,19 @@ namespace Microsoft.BotBuilderSamples
             services.AddSingleton<MainDialog>();
         }
 
+
+
+        public void ConfigureRepositories(IServiceCollection services, IConfiguration configuration)
+        {
+            string dynamicsUrl = configuration["Dynamics365URL"];
+            string clientId = configuration["Dynamics365ClientId"];
+            string clientSecret = configuration["Dynamics365ClientSecret"];
+            string connectionString = $"AuthType=ClientCredentials;Url={dynamicsUrl};Client Id={clientId};Client Secret={clientSecret};";
+            CdsServiceClient cdsServiceClient = new CdsServiceClient(connectionString);
+            services.AddSingleton<ISubjectRepository>(x => new SubjectRepository(cdsServiceClient));
+
+
+        }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

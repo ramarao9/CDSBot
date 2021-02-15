@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <AssemblyName>Vij.CDS.Bots</AssemblyName>
-    <RootNamespace>Vij.CDS.Bots</RootNamespace>
+    <AssemblyName>Vij.Bots.DynamicsCRMBot</AssemblyName>
+    <RootNamespace>Vij.Bots.DynamicsCRMBot</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,19 +33,15 @@
     <PackageReference Include="Microsoft.Bot.Builder.Azure" Version="4.9.3" />
     <PackageReference Include="Microsoft.Bot.Builder.Dialogs" Version="4.9.3" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.9.3" />
-    <PackageReference Include="Microsoft.Dynamics.Sdk.Messages" Version="0.2.5-Alpha" />
+    <PackageReference Include="Microsoft.Dynamics.Sdk.Messages" Version="0.3.6-Alpha" />
     <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1000" />
-    <PackageReference Include="Microsoft.PowerPlatform.Cds.Client" Version="0.2.5-Alpha" />
+    <PackageReference Include="Microsoft.PowerPlatform.Cds.Client" Version="0.3.6-Alpha" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Repositories\" />
   </ItemGroup>
   
   <Import Project="PostDeployScripts\IncludeSources.targets" Condition="Exists('PostDeployScripts\IncludeSources.targets')" />

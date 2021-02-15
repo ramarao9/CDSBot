@@ -7,10 +7,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Vij.CDS.Bots.Helpers;
-using Vij.CDS.Bots.Services;
+using Vij.Bots.DynamicsCRMBot.Helpers;
+using Vij.Bots.DynamicsCRMBot.Models;
+using Vij.Bots.DynamicsCRMBot.Services;
 
-namespace Vij.CDS.Bots.Dialogs
+namespace Vij.Bots.DynamicsCRMBot.Dialogs
 {
     public class MainDialog : ComponentDialog
     {
@@ -25,17 +26,18 @@ namespace Vij.CDS.Bots.Dialogs
             _luisRecognizer = luisRecognizer;
             _stateService = stateService;
 
-            AddDialog(new GreetingDialog( _stateService));
-            AddDialog(new KBDialog());
-            AddDialog(new CaseDialog());
-            AddDialog(new AppointmentDialog());
-
 
             var waterfallSteps = new WaterfallStep[]
             {
                 InitialStepAsync,
                 FinalStepAsync
             };
+
+
+            AddDialog(new GreetingDialog($"{nameof(MainDialog)}.greeting", _stateService));
+            // AddDialog(new KBDialog());
+            AddDialog(new NewCaseDialog($"{nameof(MainDialog)}.newCase", _stateService));
+            //  AddDialog(new AppointmentDialog());
 
             AddDialog(new WaterfallDialog($"{nameof(MainDialog)}.mainFlow", waterfallSteps));
 
@@ -51,17 +53,31 @@ namespace Vij.CDS.Bots.Dialogs
             // First, we use the dispatch model to determine which cognitive service (LUIS or QnA) to use.
             var recognizerResult = await _luisRecognizer.RecognizeAsync(stepContext.Context, cancellationToken);
 
-            // Top intent tell us which cognitive service to use.
-            var topIntent = recognizerResult.GetTopScoringIntent();
+            UserProfile userProfile = await _stateService.UserProfileAccessor.GetAsync(stepContext.Context, () => new UserProfile());
 
-            switch (topIntent.intent)
+            if (recognizerResult != null)
             {
-                case "GreetingIntent":
+                // Top intent tell us which cognitive service to use.
+                var topIntent = recognizerResult.GetTopScoringIntent();
+                if (!userProfile.GreetingComplete)
+                {
                     return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.greeting", null, cancellationToken);
-                default:
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I'm sorry I don't know what you mean."), cancellationToken);
-                    break;
+                }
+
+                switch (topIntent.intent.ToLower())
+                {
+                    case "greetingintent":
+                        return await stepContext.NextAsync(null, cancellationToken);
+
+                    case "issue":
+                        return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.newCase", null, cancellationToken);
+
+                    default:
+                        await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I'm sorry I don't know what you mean."), cancellationToken);
+                        break;
+                }
             }
+
 
             return await stepContext.NextAsync(null, cancellationToken);
         }

@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Vij.CDS.Bots.Models;
-using Vij.CDS.Bots.Services;
+using Vij.Bots.DynamicsCRMBot.Models;
+using Vij.Bots.DynamicsCRMBot.Services;
 
-namespace Vij.CDS.Bots.Dialogs
+namespace Vij.Bots.DynamicsCRMBot.Dialogs
 {
 
     public class GreetingDialog : ComponentDialog
@@ -16,7 +16,7 @@ namespace Vij.CDS.Bots.Dialogs
         #region Variables
         private readonly StateService _stateService;
         #endregion  
-        public GreetingDialog(StateService stateService) : base(nameof(GreetingDialog))
+        public GreetingDialog(string dialogId, StateService stateService) : base(dialogId)
         {
             _stateService = stateService ?? throw new System.ArgumentNullException(nameof(stateService));
 
@@ -35,6 +35,7 @@ namespace Vij.CDS.Bots.Dialogs
             // Add Named Dialogs
             AddDialog(new WaterfallDialog($"{nameof(GreetingDialog)}.mainFlow", waterfallSteps));
             AddDialog(new TextPrompt($"{nameof(GreetingDialog)}.name"));
+            AddDialog(new TextPrompt($"{nameof(GreetingDialog)}.howCanIHelp"));
 
             // Set the starting Dialog
             InitialDialogId = $"{nameof(GreetingDialog)}.mainFlow";
@@ -65,13 +66,27 @@ namespace Vij.CDS.Bots.Dialogs
             {
                 // Set the name
                 userProfile.Name = (string)stepContext.Result;
-
                 // Save any state changes that might have occured during the turn.
                 await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
             }
 
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text(String.Format("Hi {0}. How can I help you today?", userProfile.Name)), cancellationToken);
-            return await stepContext.EndDialogAsync(null, cancellationToken);
+            if (!userProfile.GreetingComplete)
+            {
+        
+                userProfile.GreetingComplete = true;
+                // Save any state changes that might have occured during the turn.
+                await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
+
+                return await stepContext.PromptAsync($"{nameof(GreetingDialog)}.howCanIHelp",
+                new PromptOptions
+                {
+                    Prompt = MessageFactory.Text(string.Format("Hi {0}. How can I help you today?", userProfile.Name))
+                }, cancellationToken);
+
+            }
+
+
+            return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
         }
     }
 }

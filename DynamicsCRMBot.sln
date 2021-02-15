@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CDSBot", "CDSBot.csproj", "{57FABD6D-F996-473C-9433-6D83FAC25E8F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DynamicsCRMBot", "DynamicsCRMBot.csproj", "{57FABD6D-F996-473C-9433-6D83FAC25E8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
