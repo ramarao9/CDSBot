@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Vij.CDS.Bots.Models
+namespace Vij.Bots.DynamicsCRMBot.Models
 {
 	public class ConversationData
 	{

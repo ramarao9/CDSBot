@@ -2,14 +2,11 @@
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Vij.CDS.Bots.Services;
+using Vij.Bots.DynamicsCRMBot.Services;
 
-namespace Vij.CDS.Bots.Bots
+namespace Vij.Bots.DynamicsCRMBot.Bots
 {
     public class DialogBot<T> : ActivityHandler
        where T : Dialog

@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "EchoBot": {
+    "DynamicsCRMBot": {
       "commandName": "Project",
       "launchBrowser": true,
       "applicationUrl": "http://localhost:3978",

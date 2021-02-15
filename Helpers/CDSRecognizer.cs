@@ -3,7 +3,7 @@ using Microsoft.Bot.Builder.AI.Luis;
 using Microsoft.Extensions.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
-namespace Vij.CDS.Bots.Helpers
+namespace Vij.Bots.DynamicsCRMBot.Helpers
 {
     public class CDSRecognizer : IRecognizer
     {

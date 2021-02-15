@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Vij.CDS.Bots.Dialogs
+namespace Vij.Bots.DynamicsCRMBot.Dialogs
 {
 
     //use the input from the user to identify if there is a KB to help, pass it off to the case dialog if a new issue needs to be created
