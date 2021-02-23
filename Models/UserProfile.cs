@@ -8,7 +8,7 @@ namespace Vij.Bots.DynamicsCRMBot.Models
     public class UserProfile
     {
         public string Name { get; set; }
-        public bool GreetingComplete;
+    
 
         public string IssueType;
         public string Description { get; set; }

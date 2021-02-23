@@ -9,5 +9,9 @@ namespace Vij.Bots.DynamicsCRMBot.Models
 	{
 		// Track whether we have already asked the user's name
 		public bool PromptedUserForName { get; set; } = false;
+
+		public bool NewIssueCaptured { get; set; } = false;
+
+		public bool GreetingComplete;
 	}
 }

@@ -62,6 +62,8 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
         private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             UserProfile userProfile = await _stateService.UserProfileAccessor.GetAsync(stepContext.Context, () => new UserProfile());
+
+            ConversationData conversationData = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
             if (string.IsNullOrEmpty(userProfile.Name))
             {
                 // Set the name
@@ -70,12 +72,12 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
                 await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
             }
 
-            if (!userProfile.GreetingComplete)
+            if (!conversationData.GreetingComplete)
             {
-        
-                userProfile.GreetingComplete = true;
+
+                conversationData.GreetingComplete = true;
                 // Save any state changes that might have occured during the turn.
-                await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
+                await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, conversationData);
 
                 return await stepContext.PromptAsync($"{nameof(GreetingDialog)}.howCanIHelp",
                 new PromptOptions

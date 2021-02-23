@@ -47,7 +47,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
             AddDialog(new TextPrompt($"{nameof(NewCaseDialog)}.description"));
             AddDialog(new DateTimePrompt($"{nameof(NewCaseDialog)}.callbackTime", CallbackTimeValidatorAsync));
             AddDialog(new TextPrompt($"{nameof(NewCaseDialog)}.phoneNumber", PhoneNumberValidatorAsync));
- 
+
 
             // Set the starting Dialog
             InitialDialogId = $"{nameof(NewCaseDialog)}.mainFlow";
@@ -55,7 +55,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
 
         private async Task<DialogTurnResult> IssueTypeStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {           
+        {
             return await stepContext.PromptAsync($"{nameof(NewCaseDialog)}.issueType",
                 new PromptOptions
                 {
@@ -67,7 +67,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
         private async Task<DialogTurnResult> DescriptionStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
 
-            
+
             stepContext.Values["issueType"] = ((FoundChoice)stepContext.Result).Value;
             return await stepContext.PromptAsync($"{nameof(NewCaseDialog)}.description",
                 new PromptOptions
@@ -107,6 +107,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
             // Get the current profile object from user state.
             var userProfile = await _stateService.UserProfileAccessor.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
+            var conversationData = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData(), cancellationToken);
 
             // Save all of the data inside the user profile
             userProfile.Description = (string)stepContext.Values["description"];
@@ -123,6 +124,11 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
             // Save data in userstate
             await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
+
+
+            conversationData.NewIssueCaptured = true;
+            //Save data in Conversation state to indicate New issue Captured
+            await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, conversationData);
 
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is the end.
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);

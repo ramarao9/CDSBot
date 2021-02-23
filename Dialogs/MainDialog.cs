@@ -53,15 +53,20 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
             // First, we use the dispatch model to determine which cognitive service (LUIS or QnA) to use.
             var recognizerResult = await _luisRecognizer.RecognizeAsync(stepContext.Context, cancellationToken);
 
-            UserProfile userProfile = await _stateService.UserProfileAccessor.GetAsync(stepContext.Context, () => new UserProfile());
+            ConversationData conversationData = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
 
             if (recognizerResult != null)
             {
                 // Top intent tell us which cognitive service to use.
                 var topIntent = recognizerResult.GetTopScoringIntent();
-                if (!userProfile.GreetingComplete)
+                if (!conversationData.GreetingComplete)
                 {
                     return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.greeting", null, cancellationToken);
+                }
+
+                if(conversationData.NewIssueCaptured && topIntent.intent.ToLower()=="issue")
+                {
+                    return await stepContext.NextAsync(null, cancellationToken);
                 }
 
                 switch (topIntent.intent.ToLower())
@@ -71,6 +76,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
                     case "issue":
                         return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.newCase", null, cancellationToken);
+
 
                     default:
                         await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I'm sorry I don't know what you mean."), cancellationToken);
