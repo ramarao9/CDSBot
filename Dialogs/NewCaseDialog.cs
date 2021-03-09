@@ -1,14 +1,19 @@
 ﻿using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Choices;
+using Microsoft.Bot.Schema;
+using Microsoft.Xrm.Sdk;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Vij.Bots.DynamicsCRMBot.Interfaces;
 using Vij.Bots.DynamicsCRMBot.Models;
 using Vij.Bots.DynamicsCRMBot.Services;
+using Entity = Microsoft.Xrm.Sdk.Entity;
 
 namespace Vij.Bots.DynamicsCRMBot.Dialogs
 {
@@ -21,9 +26,15 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
         #region Variables
         private readonly StateService _stateService;
+
+        private ICaseRepository _caseRepository;
+        private IContactRepository _contactRepository;
         #endregion  
-        public NewCaseDialog(string dialogId, StateService stateService) : base(dialogId)
+        public NewCaseDialog(string dialogId, StateService stateService,
+            ICaseRepository subjectRepository, IContactRepository contactRepository) : base(dialogId)
         {
+            _caseRepository = subjectRepository;
+            _contactRepository = contactRepository;
             _stateService = stateService ?? throw new System.ArgumentNullException(nameof(stateService));
 
             InitializeWaterfallDialog();
@@ -35,6 +46,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
             var waterfallSteps = new WaterfallStep[]
             {
                 IssueTypeStepAsync,
+                EmailAddressStepAsync,
                 DescriptionStepAsync,
                 CallbackTimeStepAsync,
                 PhoneNumberStepAsync,
@@ -44,6 +56,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
             // Add Named Dialogs
             AddDialog(new WaterfallDialog($"{nameof(NewCaseDialog)}.mainFlow", waterfallSteps));
             AddDialog(new ChoicePrompt($"{nameof(NewCaseDialog)}.issueType"));
+            AddDialog(new TextPrompt($"{nameof(NewCaseDialog)}.emailAddress"));
             AddDialog(new TextPrompt($"{nameof(NewCaseDialog)}.description"));
             AddDialog(new DateTimePrompt($"{nameof(NewCaseDialog)}.callbackTime", CallbackTimeValidatorAsync));
             AddDialog(new TextPrompt($"{nameof(NewCaseDialog)}.phoneNumber", PhoneNumberValidatorAsync));
@@ -64,11 +77,22 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
                 }, cancellationToken);
         }
 
-        private async Task<DialogTurnResult> DescriptionStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        private async Task<DialogTurnResult> EmailAddressStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
 
 
             stepContext.Values["issueType"] = ((FoundChoice)stepContext.Result).Value;
+            return await stepContext.PromptAsync($"{nameof(NewCaseDialog)}.emailAddress",
+                new PromptOptions
+                {
+                    Prompt = MessageFactory.Text("Email Address?")
+                }, cancellationToken);
+        }
+
+
+        private async Task<DialogTurnResult> DescriptionStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            stepContext.Values["emailAddress"] = (string)stepContext.Result;
             return await stepContext.PromptAsync($"{nameof(NewCaseDialog)}.description",
                 new PromptOptions
                 {
@@ -113,22 +137,36 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
             userProfile.Description = (string)stepContext.Values["description"];
             userProfile.CallbackTime = (DateTime)stepContext.Values["callbackTime"];
             userProfile.PhoneNumber = (string)stepContext.Values["phoneNumber"];
+            userProfile.EmailAddress = (string)stepContext.Values["emailAddress"];
             userProfile.IssueType = (string)stepContext.Values["issueType"];
 
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Here is a summary of your issue:");
+            sb.AppendLine(string.Format("Email Address: {0}", userProfile.EmailAddress));
+            sb.AppendLine(string.Format("Description: {0}", userProfile.Description));
+            sb.AppendLine(string.Format("Callback Time: {0}", userProfile.CallbackTime.ToString()));
+            sb.AppendLine(string.Format("Phone Number: {0}", userProfile.PhoneNumber));
+
+            string issueSummary = sb.ToString();
+
             // Show the summary to the user
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Here is a summary of your issue:"), cancellationToken);
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text(string.Format("Description: {0}", userProfile.Description)), cancellationToken);
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text(string.Format("Callback Time: {0}", userProfile.CallbackTime.ToString())), cancellationToken);
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text(string.Format("Phone Number: {0}", userProfile.PhoneNumber)), cancellationToken);
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text(string.Format("Type: {0}", userProfile.IssueType)), cancellationToken);
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text(issueSummary), cancellationToken);
 
             // Save data in userstate
             await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
 
+            await stepContext.Context.SendActivityAsync(new Activity { Type = ActivityTypes.Typing }, cancellationToken);
 
-            conversationData.NewIssueCaptured = true;
+            string ticketNumber = await CreateCaseInCRM(userProfile);
+
+            //Give the user ticket number
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Your case {ticketNumber} has been successfully created!"), cancellationToken);
+
+            conversationData.CurrentDialogCompleted = true;
             //Save data in Conversation state to indicate New issue Captured
             await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, conversationData);
+
+            stepContext.Context.TurnState.Add("DialogCompleted", "Issue");
 
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is the end.
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
@@ -163,5 +201,29 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
             }
             return Task.FromResult(valid);
         }
+
+        private async Task<string> CreateCaseInCRM(UserProfile userProfile)
+        {
+            List<Subject> subjects = await _caseRepository.GetSubjects();
+            Subject subject = subjects.FirstOrDefault(x => x.Name == userProfile.IssueType);
+
+            Entity incident = new Entity("incident");
+            incident["title"] = $"{userProfile.Name} - {userProfile.IssueType}";
+            if (subject != null)
+            {
+                incident["subjectid"] = new EntityReference("subject", subject.Id);
+            }
+
+            EntityReference contactER = await _contactRepository.FindContact(userProfile);
+            if (contactER == null)
+            {
+                contactER = await _contactRepository.CreateContact(userProfile);
+            }
+            incident["customerid"] = contactER;
+
+            Entity caseRecord = await _caseRepository.CreateCase(incident);
+            return caseRecord["ticketnumber"].ToString();
+        }
+
     }
 }

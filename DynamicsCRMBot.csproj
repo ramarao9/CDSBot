@@ -5,6 +5,7 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>Vij.Bots.DynamicsCRMBot</AssemblyName>
     <RootNamespace>Vij.Bots.DynamicsCRMBot</RootNamespace>
+    <UserSecretsId>1cf625a5-3aba-4733-82dc-4477422e4b5e</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.3.0" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.1.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.5" />
     <PackageReference Include="Microsoft.Bot.Builder.AI.Luis" Version="4.9.3" />
@@ -34,8 +38,9 @@
     <PackageReference Include="Microsoft.Bot.Builder.Dialogs" Version="4.9.3" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.9.3" />
     <PackageReference Include="Microsoft.Dynamics.Sdk.Messages" Version="0.3.6-Alpha" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.0.0" />
     <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1000" />
-    <PackageReference Include="Microsoft.PowerPlatform.Cds.Client" Version="0.3.6-Alpha" />
+    <PackageReference Include="Microsoft.PowerPlatform.Cds.Client" Version="0.3.10-Alpha" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,13 +10,20 @@ using Vij.Bots.DynamicsCRMBot.Models;
 
 namespace Vij.Bots.DynamicsCRMBot.Repositories
 {
-    public class SubjectRepository : ISubjectRepository
+    public class CaseRepository : ICaseRepository
     {
-
         private CdsServiceClient _cdsServiceClient;
-        public SubjectRepository(CdsServiceClient cdsServiceClient)
+        public CaseRepository(CdsServiceClient cdsServiceClient)
         {
             _cdsServiceClient = cdsServiceClient;
+        }
+
+        public async Task<Entity> CreateCase(Entity entity)
+        {
+            Guid caseId = await _cdsServiceClient.CreateAsync(entity);
+
+            Entity caseRecord = await _cdsServiceClient.RetrieveAsync("incident", caseId, new ColumnSet("ticketnumber"));
+            return caseRecord;
         }
 
         public async Task<List<Subject>> GetSubjects()
@@ -24,9 +31,8 @@ namespace Vij.Bots.DynamicsCRMBot.Repositories
             List<Subject> subjects = new List<Subject>();
             QueryExpression subjectQuery = new QueryExpression("subject");
             subjectQuery.ColumnSet = new ColumnSet("subjectid", "title");
-            subjectQuery.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
 
-            EntityCollection results = _cdsServiceClient.RetrieveMultiple(subjectQuery);
+            EntityCollection results = await _cdsServiceClient.RetrieveMultipleAsync(subjectQuery);
 
             if (results != null && results.Entities != null && results.Entities.Count > 0)
             {

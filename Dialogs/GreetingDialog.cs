@@ -72,22 +72,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
                 await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
             }
 
-            if (!conversationData.GreetingComplete)
-            {
-
-                conversationData.GreetingComplete = true;
-                // Save any state changes that might have occured during the turn.
-                await _stateService.ConversationDataAccessor.SetAsync(stepContext.Context, conversationData);
-
-                return await stepContext.PromptAsync($"{nameof(GreetingDialog)}.howCanIHelp",
-                new PromptOptions
-                {
-                    Prompt = MessageFactory.Text(string.Format("Hi {0}. How can I help you today?", userProfile.Name))
-                }, cancellationToken);
-
-            }
-
-
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text(String.Format("Hi {0}. How can I help you today?", userProfile.Name)), cancellationToken);
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
         }
     }

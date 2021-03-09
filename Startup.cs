@@ -17,6 +17,11 @@ using Vij.Bots.DynamicsCRMBot.Helpers;
 using Vij.Bots.DynamicsCRMBot.Interfaces;
 using Vij.Bots.DynamicsCRMBot.Repositories;
 using Vij.Bots.DynamicsCRMBot.Services;
+using Microsoft.Extensions.Azure;
+using Azure.Storage.Queues;
+using Azure.Storage.Blobs;
+using Azure.Core.Extensions;
+using System;
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -38,7 +43,6 @@ namespace Microsoft.BotBuilderSamples
             // Create the Bot Framework Adapter with error handling enabled.
             services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
-
             // Register LUIS recognizer
             services.AddSingleton<CDSRecognizer>();
 
@@ -51,13 +55,15 @@ namespace Microsoft.BotBuilderSamples
 
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
             services.AddTransient<IBot, DialogBot<MainDialog>>();
+            services.AddAzureClients(builder =>
+            {
+                builder.AddBlobServiceClient(_configuration["ConnectionStrings:StorageAccountConnectionString:blob"], preferMsi: true);
+                builder.AddQueueServiceClient(_configuration["ConnectionStrings:StorageAccountConnectionString:queue"], preferMsi: true);
+            });
         }
-
-
 
         public void ConfigureState(IServiceCollection services, IConfiguration configuration)
         {
-
             var storageAccount = configuration["StorageAccountConnectionString"];
             var storageContainer = configuration["StorageAccountContainer"];
 
@@ -85,10 +91,10 @@ namespace Microsoft.BotBuilderSamples
             string dynamicsUrl = configuration["Dynamics365URL"];
             string clientId = configuration["Dynamics365ClientId"];
             string clientSecret = configuration["Dynamics365ClientSecret"];
-            string connectionString = $"AuthType=ClientCredentials;Url={dynamicsUrl};Client Id={clientId};Client Secret={clientSecret};";
+            string connectionString = $"AuthType=ClientSecret;Url={dynamicsUrl};ClientId={clientId};ClientSecret={clientSecret};";
             CdsServiceClient cdsServiceClient = new CdsServiceClient(connectionString);
-            services.AddSingleton<ISubjectRepository>(x => new SubjectRepository(cdsServiceClient));
-
+            services.AddSingleton<ICaseRepository>(x => new CaseRepository(cdsServiceClient));
+            services.AddSingleton<IContactRepository>(x => new ContactRepository(cdsServiceClient));
 
         }
 
@@ -113,6 +119,31 @@ namespace Microsoft.BotBuilderSamples
                 endpoints.MapControllers();
             });
 
+        }
+    }
+    internal static class StartupExtensions
+    {
+        public static IAzureClientBuilder<BlobServiceClient, BlobClientOptions> AddBlobServiceClient(this AzureClientFactoryBuilder builder, string serviceUriOrConnectionString, bool preferMsi)
+        {
+            if (preferMsi && Uri.TryCreate(serviceUriOrConnectionString, UriKind.Absolute, out Uri serviceUri))
+            {
+                return builder.AddBlobServiceClient(serviceUri);
+            }
+            else
+            {
+                return builder.AddBlobServiceClient(serviceUriOrConnectionString);
+            }
+        }
+        public static IAzureClientBuilder<QueueServiceClient, QueueClientOptions> AddQueueServiceClient(this AzureClientFactoryBuilder builder, string serviceUriOrConnectionString, bool preferMsi)
+        {
+            if (preferMsi && Uri.TryCreate(serviceUriOrConnectionString, UriKind.Absolute, out Uri serviceUri))
+            {
+                return builder.AddQueueServiceClient(serviceUri);
+            }
+            else
+            {
+                return builder.AddQueueServiceClient(serviceUriOrConnectionString);
+            }
         }
     }
 }

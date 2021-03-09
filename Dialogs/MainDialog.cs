@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Vij.Bots.DynamicsCRMBot.Helpers;
+using Vij.Bots.DynamicsCRMBot.Interfaces;
 using Vij.Bots.DynamicsCRMBot.Models;
 using Vij.Bots.DynamicsCRMBot.Services;
 
@@ -20,12 +21,17 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
         private readonly StateService _stateService;
         protected readonly ILogger _logger;
 
-        public MainDialog(StateService stateService, CDSRecognizer luisRecognizer, ILogger<MainDialog> logger) : base(nameof(MainDialog))
+        ICaseRepository _subjectRepository;
+        IContactRepository _contactRepository;
+
+        public MainDialog(StateService stateService, CDSRecognizer luisRecognizer,
+            ILogger<MainDialog> logger, ICaseRepository subjectRepository, IContactRepository contactRepository) : base(nameof(MainDialog))
         {
             _logger = logger;
             _luisRecognizer = luisRecognizer;
             _stateService = stateService;
-
+            _subjectRepository = subjectRepository;
+            _contactRepository = contactRepository;
 
             var waterfallSteps = new WaterfallStep[]
             {
@@ -36,7 +42,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
             AddDialog(new GreetingDialog($"{nameof(MainDialog)}.greeting", _stateService));
             // AddDialog(new KBDialog());
-            AddDialog(new NewCaseDialog($"{nameof(MainDialog)}.newCase", _stateService));
+            AddDialog(new NewCaseDialog($"{nameof(MainDialog)}.newCase", _stateService, _subjectRepository, contactRepository));
             //  AddDialog(new AppointmentDialog());
 
             AddDialog(new WaterfallDialog($"{nameof(MainDialog)}.mainFlow", waterfallSteps));
@@ -47,36 +53,45 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
         }
 
 
-
         private async Task<DialogTurnResult> InitialStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             // First, we use the dispatch model to determine which cognitive service (LUIS or QnA) to use.
             var recognizerResult = await _luisRecognizer.RecognizeAsync(stepContext.Context, cancellationToken);
-
             ConversationData conversationData = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
 
-            if (recognizerResult != null)
-            {
-                // Top intent tell us which cognitive service to use.
-                var topIntent = recognizerResult.GetTopScoringIntent();
-                if (!conversationData.GreetingComplete)
-                {
-                    return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.greeting", null, cancellationToken);
-                }
+            bool dialogCompleted = stepContext.Context.TurnState.ContainsKey("DialogCompleted");
 
-                if(conversationData.NewIssueCaptured && topIntent.intent.ToLower()=="issue")
-                {
-                    return await stepContext.NextAsync(null, cancellationToken);
-                }
+            var topIntent = recognizerResult.GetTopScoringIntent();
+            if (dialogCompleted)
+            {
+                stepContext.Context.TurnState.Remove("DialogCompleted");
+            }
+            else
+            {
+
+                string text = stepContext.Context.Activity.Text;
+
 
                 switch (topIntent.intent.ToLower())
                 {
                     case "greetingintent":
-                        return await stepContext.NextAsync(null, cancellationToken);
+                        if (text == null || text.ToLower() != "no")
+                        {
+                            return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.greeting", null, cancellationToken);
+                        }
+                        break;
+
 
                     case "issue":
                         return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.newCase", null, cancellationToken);
 
+                    case "thank you":
+                        await stepContext.Context.SendActivityAsync(MessageFactory.Text("You are welcome"), cancellationToken);
+                        break;
+
+                    case "no":
+                        await stepContext.Context.SendActivityAsync(MessageFactory.Text("Have a great day!"), cancellationToken);
+                        break;
 
                     default:
                         await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I'm sorry I don't know what you mean."), cancellationToken);
@@ -86,6 +101,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
 
             return await stepContext.NextAsync(null, cancellationToken);
+
         }
 
 
@@ -94,9 +110,21 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
         private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            // Restart the main dialog with a different message the second time around
-            var promptMessage = "What else can I do for you?";
-            return await stepContext.ReplaceDialogAsync(InitialDialogId, promptMessage, cancellationToken);
+
+            bool dialogCompleted = stepContext.Context.TurnState.ContainsKey("DialogCompleted");
+
+            if (dialogCompleted)
+            {
+                // Restart the main dialog with a different message the second time around
+                var promptMessage = "Is there anything else I can help you with?";
+                await stepContext.Context.SendActivityAsync(MessageFactory.Text(promptMessage), cancellationToken);
+                return await stepContext.ReplaceDialogAsync(InitialDialogId, null, cancellationToken);
+            }
+            else
+            {
+                return await stepContext.EndDialogAsync(null, cancellationToken);
+            }
+
         }
     }
 }
