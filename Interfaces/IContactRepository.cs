@@ -11,6 +11,8 @@ namespace Vij.Bots.DynamicsCRMBot.Interfaces
     {
         public Task<EntityReference> FindContact(UserProfile userProfile);
 
+        public Task<EntityReference> FindContact(string fullName);
+
         public Task<EntityReference> CreateContact(UserProfile userProfile);
 
     }

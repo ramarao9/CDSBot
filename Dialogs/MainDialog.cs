@@ -1,6 +1,7 @@
 ﻿using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -23,15 +24,22 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
         ICaseRepository _subjectRepository;
         IContactRepository _contactRepository;
+        IInvoiceRepository _invoiceRepository;
+        IConfiguration _configuration;
+
+
+        AIFormRecognizer _aiFormRecognizer;
 
         public MainDialog(StateService stateService, CDSRecognizer luisRecognizer,
-            ILogger<MainDialog> logger, ICaseRepository subjectRepository, IContactRepository contactRepository) : base(nameof(MainDialog))
+            ILogger<MainDialog> logger, ICaseRepository subjectRepository,
+            IContactRepository contactRepository, IInvoiceRepository invoiceRepository, IConfiguration configuration) : base(nameof(MainDialog))
         {
             _logger = logger;
             _luisRecognizer = luisRecognizer;
             _stateService = stateService;
             _subjectRepository = subjectRepository;
             _contactRepository = contactRepository;
+            _invoiceRepository = invoiceRepository;
 
             var waterfallSteps = new WaterfallStep[]
             {
@@ -39,10 +47,14 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
                 FinalStepAsync
             };
 
+            _aiFormRecognizer = new AIFormRecognizer(configuration);
+
 
             AddDialog(new GreetingDialog($"{nameof(MainDialog)}.greeting", _stateService));
             // AddDialog(new KBDialog());
             AddDialog(new NewCaseDialog($"{nameof(MainDialog)}.newCase", _stateService, _subjectRepository, contactRepository));
+
+            AddDialog(new InvoiceDialog($"{nameof(MainDialog)}.invoiceUpload", _stateService, _contactRepository, _invoiceRepository, _aiFormRecognizer));
             //  AddDialog(new AppointmentDialog());
 
             AddDialog(new WaterfallDialog($"{nameof(MainDialog)}.mainFlow", waterfallSteps));
@@ -59,9 +71,12 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
             var recognizerResult = await _luisRecognizer.RecognizeAsync(stepContext.Context, cancellationToken);
             ConversationData conversationData = await _stateService.ConversationDataAccessor.GetAsync(stepContext.Context, () => new ConversationData());
 
+            string text = stepContext.Context.Activity.Text;
+
             bool dialogCompleted = stepContext.Context.TurnState.ContainsKey("DialogCompleted");
 
             var topIntent = recognizerResult.GetTopScoringIntent();
+
             if (dialogCompleted)
             {
                 stepContext.Context.TurnState.Remove("DialogCompleted");
@@ -69,34 +84,38 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
             else
             {
 
-                string text = stepContext.Context.Activity.Text;
-
+                Dictionary<string, object> contextVars = new Dictionary<string, object>() { { "BotHandoffTopic", "CreditCard" } };
 
                 switch (topIntent.intent.ToLower())
                 {
                     case "greetingintent":
-                        if (text == null || text.ToLower() != "no")
-                        {
-                            return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.greeting", null, cancellationToken);
-                        }
-                        break;
+                        return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.greeting", null, cancellationToken);
 
+                    case "humaninteraction":
+                        OmnichannelBotClient.AddEscalationContext(stepContext.Context.Activity, contextVars);
+                        await stepContext.Context.SendActivityAsync(MessageFactory.Text("requestescalation"), cancellationToken);
+                        break;
 
                     case "issue":
                         return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.newCase", null, cancellationToken);
+
+
+                    case "invoiceupload":
+                        return await stepContext.BeginDialogAsync($"{nameof(MainDialog)}.invoiceUpload", null, cancellationToken);
 
                     case "thank you":
                         await stepContext.Context.SendActivityAsync(MessageFactory.Text("You are welcome"), cancellationToken);
                         break;
 
-                    case "no":
-                        await stepContext.Context.SendActivityAsync(MessageFactory.Text("Have a great day!"), cancellationToken);
+                    case "none":
                         break;
 
                     default:
                         await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I'm sorry I don't know what you mean."), cancellationToken);
                         break;
                 }
+
+
             }
 
 

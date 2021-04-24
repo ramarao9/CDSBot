@@ -46,6 +46,9 @@ namespace Microsoft.BotBuilderSamples
             // Register LUIS recognizer
             services.AddSingleton<CDSRecognizer>();
 
+
+            services.AddSingleton(x=>new AIFormRecognizer(_configuration));
+
             // Configure State
             ConfigureState(services, _configuration);
 
@@ -60,6 +63,10 @@ namespace Microsoft.BotBuilderSamples
                 builder.AddBlobServiceClient(_configuration["ConnectionStrings:StorageAccountConnectionString:blob"], preferMsi: true);
                 builder.AddQueueServiceClient(_configuration["ConnectionStrings:StorageAccountConnectionString:queue"], preferMsi: true);
             });
+
+
+            services.AddSingleton<CustomMiddleware>();
+
         }
 
         public void ConfigureState(IServiceCollection services, IConfiguration configuration)
@@ -95,6 +102,7 @@ namespace Microsoft.BotBuilderSamples
             CdsServiceClient cdsServiceClient = new CdsServiceClient(connectionString);
             services.AddSingleton<ICaseRepository>(x => new CaseRepository(cdsServiceClient));
             services.AddSingleton<IContactRepository>(x => new ContactRepository(cdsServiceClient));
+            services.AddSingleton<IInvoiceRepository>(x => new InvoiceRepository(cdsServiceClient));
 
         }
 

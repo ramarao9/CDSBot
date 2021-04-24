@@ -51,5 +51,26 @@ namespace Vij.Bots.DynamicsCRMBot.Repositories
                 return null;
             }
         }
+
+
+        public async Task<EntityReference> FindContact(string fullName)
+        {
+            QueryExpression query = new QueryExpression("contact");
+            query.ColumnSet = new ColumnSet("contactid");
+            query.Criteria.AddCondition("fullname", ConditionOperator.Equal, fullName);
+
+            EntityCollection results = await _cdsServiceClient.RetrieveMultipleAsync(query);
+
+            if (results != null && results.Entities != null && results.Entities.Count == 1)
+            {
+                return results.Entities[0].ToEntityReference();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
     }
 }

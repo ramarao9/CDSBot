@@ -5,14 +5,23 @@ using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Builder.TraceExtensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Omnichannel.Bot.Middleware;
 
 namespace Vij.Bots.DynamicsCRMBot.Helpers
 {
     public class AdapterWithErrorHandler : BotFrameworkHttpAdapter
     {
-        public AdapterWithErrorHandler(IConfiguration configuration, ILogger<BotFrameworkHttpAdapter> logger)
-            : base(configuration, logger)
+
+         
+
+
+        public AdapterWithErrorHandler(IConfiguration configuration, CustomMiddleware customMiddleware, ILogger<BotFrameworkHttpAdapter> logger)
+                : base(configuration, logger)
         {
+            Use(new OmnichannelMiddleware());
+
+            Use(customMiddleware);
+
             OnTurnError = async (turnContext, exception) =>
             {
                 // Log any leaked exception from the application.

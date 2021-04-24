@@ -72,7 +72,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
                 await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
             }
 
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text(String.Format("Hi {0}. How can I help you today?", userProfile.Name)), cancellationToken);
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text(String.Format("Hi {0}. How can I help you?", userProfile.Name)), cancellationToken);
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
         }
     }

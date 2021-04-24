@@ -142,6 +142,7 @@ namespace Vij.Bots.DynamicsCRMBot.Dialogs
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Here is a summary of your issue:");
+            sb.AppendLine(string.Format("Issue: {0}", userProfile.IssueType));
             sb.AppendLine(string.Format("Email Address: {0}", userProfile.EmailAddress));
             sb.AppendLine(string.Format("Description: {0}", userProfile.Description));
             sb.AppendLine(string.Format("Callback Time: {0}", userProfile.CallbackTime.ToString()));

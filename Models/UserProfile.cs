@@ -14,5 +14,7 @@ namespace Vij.Bots.DynamicsCRMBot.Models
 
         public string EmailAddress { get; set; }
 
+        public InvoiceData LastInvoice { get; set; }
+
     }
 }

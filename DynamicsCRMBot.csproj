@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.AI.FormRecognizer" Version="3.1.0-beta.3" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.3.0" />
     <PackageReference Include="Azure.Storage.Files.Shares" Version="12.1.0" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.2.0" />
@@ -41,6 +42,7 @@
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.0.0" />
     <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1000" />
     <PackageReference Include="Microsoft.PowerPlatform.Cds.Client" Version="0.3.10-Alpha" />
+    <PackageReference Include="Microsoft.Xrm.Omnichannel.BotSDK" Version="1.0.0.5" />
   </ItemGroup>
 
   <ItemGroup>

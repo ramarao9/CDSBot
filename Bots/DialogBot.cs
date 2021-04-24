@@ -3,8 +3,10 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Vij.Bots.DynamicsCRMBot.Helpers;
 using Vij.Bots.DynamicsCRMBot.Models;
 using Vij.Bots.DynamicsCRMBot.Services;
 
@@ -17,7 +19,8 @@ namespace Vij.Bots.DynamicsCRMBot.Bots
         protected readonly StateService _stateService;
         protected readonly ILogger _logger;
 
-        private const string WelcomeMessage = @"👋Hi there! I'm a D365 bot. I can help you with Issues, find solutions and schedule an appointment.";
+        private const string WelcomeMessage = @"👋Hi there! I'm a D365 bot. I can help you with Issues, find solutions, schedule an appointment and more.";
+     
 
         public DialogBot(StateService stateService, T dialog, ILogger<DialogBot<T>> logger)
         {
@@ -36,14 +39,18 @@ namespace Vij.Bots.DynamicsCRMBot.Bots
             await _stateService.ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
         }
 
+
+
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Running dialog with Message Activity.");
 
 
+
             // Run the Dialog with the new message Activity.
             await _dialog.RunAsync(turnContext, _stateService.DialogStateAccessor, cancellationToken);
         }
+
 
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
@@ -56,7 +63,10 @@ namespace Vij.Bots.DynamicsCRMBot.Bots
                     if (!conversationData.WelcomeGreetingComplete)
                     {
                         conversationData.WelcomeGreetingComplete = true;
-                        await turnContext.SendActivityAsync(WelcomeMessage);
+
+                        IActivity replyActivity = MessageFactory.Text(WelcomeMessage);
+                        await turnContext.SendActivityAsync(replyActivity);
+
                         await _stateService.ConversationDataAccessor.SetAsync(turnContext, conversationData);
                     }
                 }
