@@ -38,10 +38,10 @@
     <PackageReference Include="Microsoft.Bot.Builder.Azure" Version="4.9.3" />
     <PackageReference Include="Microsoft.Bot.Builder.Dialogs" Version="4.9.3" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.9.3" />
-    <PackageReference Include="Microsoft.Dynamics.Sdk.Messages" Version="0.3.6-Alpha" />
+    <PackageReference Include="Microsoft.Dynamics.Sdk.Messages" Version="0.4.11" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.0.0" />
     <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1000" />
-    <PackageReference Include="Microsoft.PowerPlatform.Cds.Client" Version="0.3.10-Alpha" />
+    <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="0.4.11" />
     <PackageReference Include="Microsoft.Xrm.Omnichannel.BotSDK" Version="1.0.0.5" />
   </ItemGroup>
 

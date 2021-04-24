@@ -1,4 +1,5 @@
-﻿using Microsoft.PowerPlatform.Cds.Client;
+﻿
+using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
@@ -12,10 +13,10 @@ namespace Vij.Bots.DynamicsCRMBot.Repositories
 {
     public class ContactRepository : IContactRepository
     {
-        private CdsServiceClient _cdsServiceClient;
-        public ContactRepository(CdsServiceClient cdsServiceClient)
+        private ServiceClient _dataverseServiceClient;
+        public ContactRepository(ServiceClient cdsServiceClient)
         {
-            _cdsServiceClient = cdsServiceClient;
+            _dataverseServiceClient = cdsServiceClient;
         }
 
         public async Task<EntityReference> CreateContact(UserProfile userProfile)
@@ -30,7 +31,7 @@ namespace Vij.Bots.DynamicsCRMBot.Repositories
             }
             contact["firstname"] = contactName[0];
 
-            Guid contactId = await _cdsServiceClient.CreateAsync(contact);
+            Guid contactId = await _dataverseServiceClient.CreateAsync(contact);
             return new EntityReference("contact", contactId);
         }
 
@@ -40,7 +41,7 @@ namespace Vij.Bots.DynamicsCRMBot.Repositories
             query.ColumnSet = new ColumnSet("contactid");
             query.Criteria.AddCondition("emailaddress1", ConditionOperator.Equal, userProfile.EmailAddress);
 
-            EntityCollection results = await _cdsServiceClient.RetrieveMultipleAsync(query);
+            EntityCollection results = await _dataverseServiceClient.RetrieveMultipleAsync(query);
 
             if (results != null && results.Entities != null && results.Entities.Count == 1)
             {
@@ -59,7 +60,7 @@ namespace Vij.Bots.DynamicsCRMBot.Repositories
             query.ColumnSet = new ColumnSet("contactid");
             query.Criteria.AddCondition("fullname", ConditionOperator.Equal, fullName);
 
-            EntityCollection results = await _cdsServiceClient.RetrieveMultipleAsync(query);
+            EntityCollection results = await _dataverseServiceClient.RetrieveMultipleAsync(query);
 
             if (results != null && results.Entities != null && results.Entities.Count == 1)
             {

@@ -1,4 +1,5 @@
-﻿using Microsoft.PowerPlatform.Cds.Client;
+﻿
+using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
@@ -12,17 +13,17 @@ namespace Vij.Bots.DynamicsCRMBot.Repositories
 {
     public class CaseRepository : ICaseRepository
     {
-        private CdsServiceClient _cdsServiceClient;
-        public CaseRepository(CdsServiceClient cdsServiceClient)
+        private ServiceClient _dataverseServiceClient;
+        public CaseRepository(ServiceClient cdsServiceClient)
         {
-            _cdsServiceClient = cdsServiceClient;
+            _dataverseServiceClient = cdsServiceClient;
         }
 
         public async Task<Entity> CreateCase(Entity entity)
         {
-            Guid caseId = await _cdsServiceClient.CreateAsync(entity);
+            Guid caseId = await _dataverseServiceClient.CreateAsync(entity);
 
-            Entity caseRecord = await _cdsServiceClient.RetrieveAsync("incident", caseId, new ColumnSet("ticketnumber"));
+            Entity caseRecord = await _dataverseServiceClient.RetrieveAsync("incident", caseId, new ColumnSet("ticketnumber"));
             return caseRecord;
         }
 
@@ -32,7 +33,7 @@ namespace Vij.Bots.DynamicsCRMBot.Repositories
             QueryExpression subjectQuery = new QueryExpression("subject");
             subjectQuery.ColumnSet = new ColumnSet("subjectid", "title");
 
-            EntityCollection results = await _cdsServiceClient.RetrieveMultipleAsync(subjectQuery);
+            EntityCollection results = await _dataverseServiceClient.RetrieveMultipleAsync(subjectQuery);
 
             if (results != null && results.Entities != null && results.Entities.Count > 0)
             {

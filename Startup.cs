@@ -10,7 +10,6 @@ using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.PowerPlatform.Cds.Client;
 using Vij.Bots.DynamicsCRMBot.Bots;
 using Vij.Bots.DynamicsCRMBot.Dialogs;
 using Vij.Bots.DynamicsCRMBot.Helpers;
@@ -22,6 +21,7 @@ using Azure.Storage.Queues;
 using Azure.Storage.Blobs;
 using Azure.Core.Extensions;
 using System;
+using Microsoft.PowerPlatform.Dataverse.Client;
 
 namespace Microsoft.BotBuilderSamples
 {
@@ -99,7 +99,7 @@ namespace Microsoft.BotBuilderSamples
             string clientId = configuration["Dynamics365ClientId"];
             string clientSecret = configuration["Dynamics365ClientSecret"];
             string connectionString = $"AuthType=ClientSecret;Url={dynamicsUrl};ClientId={clientId};ClientSecret={clientSecret};";
-            CdsServiceClient cdsServiceClient = new CdsServiceClient(connectionString);
+            ServiceClient cdsServiceClient = new ServiceClient(connectionString);
             services.AddSingleton<ICaseRepository>(x => new CaseRepository(cdsServiceClient));
             services.AddSingleton<IContactRepository>(x => new ContactRepository(cdsServiceClient));
             services.AddSingleton<IInvoiceRepository>(x => new InvoiceRepository(cdsServiceClient));
